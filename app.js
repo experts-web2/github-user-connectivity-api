@@ -1,54 +1,32 @@
 const mongoose = require('mongoose')
-const bodyParser = require('body-parser')
 const express = require('express')
-const app = express()
 const cors = require('cors')
 const dotenv = require('dotenv')
-
-
+const morgan = require('morgan')
+const githubRoutes = require('./routes/githubRoutes')
 
 dotenv.config()
-const port = process.env.PORT || 3000;
+const app = express()
+const port = process.env.PORT || 3000
 
-
-var githubRoutes = require("././routes/githubRoutes")
-const morgan = require('morgan');
-
-/// MIDDLEWARE
-
+// Middleware
 app.use(morgan('dev'))
+app.use(express.json())
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}))
 
+app.use('/api/oauth', githubRoutes)
 
-// app.get('/' , getPosts.getPosts)
-app.use(bodyParser.json())
-app.use(cors());
-
-app.use('/api/oauth', githubRoutes);
-
-https: app.use(function (req, res, next) {
-    var allowedOrigins = [
-      "http://localhost:3000/",
-    ];
-    var origin = req.headers.origin;
-    if (allowedOrigins.indexOf(origin) > -1) {
-      res.header("Access-Control-Allow-Origin", origin);
-    }
-    res.header(
-      "Access-Control-Allow-Methods",
-      "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-    );
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.header("Access-Control-Allow-Credentials", true);
-    return next();
-  });
-
-//DB
+// Database connection
+mongoose.set('strictQuery', false)
 mongoose.connect(process.env.MONGO_URI)
-.then(()=>
-    console.log('Database Connected')
-);
+  .then(() => console.log('Database Connected'))
+  .catch(err => console.error('Database connection error:', err))
 
-const portToListen = 3000
-app.listen(port , ()=>{
-    console.log(`Node js Api is listening on port: ${portToListen}`)
+app.listen(port, () => {
+  console.log(`Node.js API is listening on port: ${port}`)
 })
