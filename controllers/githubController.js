@@ -31,6 +31,7 @@ exports.githubCallback = async (req, res) => {
 
   try {
     const accessToken = await githubHelper.exchangeCodeForToken(code, state);
+    console.log('accessToken-',accessToken);
     const githubUser = await githubHelper.getGitHubUser(accessToken);
     // Check if the user already exists in the database
     let user = await githubUserModel.findOne({ githubId: githubUser.id });
@@ -60,6 +61,105 @@ exports.githubCallback = async (req, res) => {
   } catch (error) {
     console.error("Error during GitHub OAuth:", error);
     res.status(500).json({ message: "Authentication failed" });
+  }
+};
+
+exports.getOrganizations = async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+    console.log('accessToken-organization',accessToken)
+    const organizations = await githubHelper.getGitHubOrganizations(accessToken);
+    console.log('organizations',organizations);
+
+      res.json(organizations);
+  } catch (error) {
+      console.error('Error fetching GitHub organizations:', error.message);
+      res.status(500).json({ error: 'Failed to fetch organizations' });
+  }
+};
+
+
+exports.getOrganizationsRapoes = async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+      const organizations = await githubHelper.getGitHubOrganizations(accessToken);
+
+
+      const organizationsWithRepos = [];
+
+      for (const org of organizations) {
+          const repos =  await githubHelper.getGitHubOrganizationsRepoes(accessToken,org.login);
+          // organizationsWithRepos.push({
+          //     organization: org.login,
+          //     repositories: repos
+          // });
+          organizationsWithRepos.push(...repos);
+      }
+
+      res.json({
+          success: true,
+          data: organizationsWithRepos
+      });
+  } catch (error) {
+      res.status(500).json({
+          success: false,
+          message: 'Error fetching organizations or repositories',
+          error: error.message
+      });
+  }
+};
+
+exports.getOrganizationsRepoPullRequest = async (req, res) => {
+  const { accessToken ,orgName , repoName } = req.body;
+  try {
+      const repoPullRequests =await githubHelper.getGitHubRepoPullRequests(accessToken, orgName, repoName);
+
+      res.json({
+          success: true,
+          data: repoPullRequests
+      });
+  } catch (error) {
+      res.status(500).json({
+          success: false,
+          message: `Error fetching repo pull-request for ${repoName} `,
+          error: error.message
+      });
+  }
+};
+
+exports.getOrganizationsRepoCommits = async (req, res) => {
+  const { accessToken ,orgName , repoName } = req.body;
+  try {
+      const repoCommits =await githubHelper.getGitHubRepoCommits(accessToken, orgName, repoName);
+
+      res.json({
+          success: true,
+          data: repoCommits
+      });
+  } catch (error) {
+      res.status(500).json({
+          success: false,
+          message: `Error fetching repo commits for ${repoName} `,
+          error: error.message
+      });
+  }
+};
+
+exports.getOrganizationsRepoIssues = async (req, res) => {
+  const { accessToken ,orgName , repoName } = req.body;
+  try {
+      const repoIssuses =await githubHelper.getGitHubRepoIssues(accessToken, orgName, repoName);
+
+      res.json({
+          success: true,
+          data: repoIssuses
+      });
+  } catch (error) {
+      res.status(500).json({
+          success: false,
+          message: `Error fetching repo issues for ${repoName} `,
+          error: error.message
+      });
   }
 };
 
