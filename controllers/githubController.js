@@ -77,36 +77,19 @@ exports.getOrganizations = async (req, res) => {
 
 exports.getOrganizationsRapoes = async (req, res) => {
   try {
-    const { accessToken,page = 1, pageSize = 10  } = req.body;
+    const { accessToken} = req.body;
     const organizations = await githubHelper.getGitHubOrganizations(accessToken);
-
-
     const organizationsWithRepos = [];
 
     for (const org of organizations) {
       const repos = await githubHelper.getGitHubOrganizationsRepoes(accessToken, org.login);
-      // organizationsWithRepos.push({
-      //     organization: org.login,
-      //     repositories: repos
-      // });
       organizationsWithRepos.push(...repos);
     }
-
-    const allRepos = organizationsWithRepos;
-    const totalRepos = allRepos.length;
-    const totalPages = Math.ceil(totalRepos / pageSize);
-    const paginatedRepos = allRepos.slice((page - 1) * pageSize, page * pageSize);
-
+    
     res.json(
       {
         success: true,
-        data: paginatedRepos,
-        pagination: {
-          totalRepos,
-          totalPages,
-          currentPage: parseInt(page, 10),
-          perPage: parseInt(pageSize, 10)
-        }
+        data: organizationsWithRepos,
       });
   } catch (error) {
     res.status(500).json({
