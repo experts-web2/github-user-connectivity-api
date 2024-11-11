@@ -1,12 +1,12 @@
 const githubHelper = require("../helpers/githubHelper");
 const githubUserModel = require("../models/githubIntegration");
+const handleError = require("../helpers/errorHandler.js");
 
 // Handle the User Retrieval
 exports.getUser = async (req, res) => {
   const { accessToken } = req.query;
 
   try {
-    // Find user in the database
     const user = await githubUserModel.findOne({ accessToken });
 
     if (user) {
@@ -20,8 +20,7 @@ exports.getUser = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error during user retrieval:", error);
-    res.status(500).json({ message: "User retrieval failed" });
+    handleError(res, error, 'User retrieval failed');
   }
 };
 
@@ -32,10 +31,9 @@ exports.githubCallback = async (req, res) => {
   try {
     const accessToken = await githubHelper.exchangeCodeForToken(code, state);
     const githubUser = await githubHelper.getGitHubUser(accessToken);
-    // Check if the user already exists in the database
-    let user = await githubUserModel.findOne({ githubId: githubUser.id });
+
+    let user = await githubUserModel.findOne({ id: githubUser.id });
     if (!user) {
-      // Create a new user if not found
       user = new githubUserModel({
         id: githubUser.id,
         avatar_url: githubUser.avatar_url,
@@ -47,7 +45,6 @@ exports.githubCallback = async (req, res) => {
       });
       await user.save();
     } else {
-      // Update existing user's access token
       user.accessToken = accessToken;
       await user.save();
     }
@@ -58,8 +55,7 @@ exports.githubCallback = async (req, res) => {
       accessToken,
     });
   } catch (error) {
-    console.error("Error during GitHub OAuth:", error);
-    res.status(500).json({ message: "Authentication failed" });
+    handleError(res, error, 'Authentication failed');
   }
 };
 
@@ -69,53 +65,40 @@ exports.getOrganizations = async (req, res) => {
     const organizations = await githubHelper.getGitHubOrganizations(accessToken);
     res.json(organizations);
   } catch (error) {
-    console.error('Error fetching GitHub organizations:', error.message);
-    res.status(500).json({ error: 'Failed to fetch organizations' });
+    handleError(res, error, 'Failed to fetch organizations');
   }
 };
 
-
 exports.getOrganizationsRapoes = async (req, res) => {
   try {
-    const { accessToken} = req.body;
+    const { accessToken } = req.body;
     const organizations = await githubHelper.getGitHubOrganizations(accessToken);
     const organizationsWithRepos = [];
 
     for (const org of organizations) {
-      const repos = await githubHelper.getGitHubOrganizationsRepoes(accessToken, org.login);
+      const repos = await githubHelper.getGitHubOrganizationsRepos(accessToken, org.login);
       organizationsWithRepos.push(...repos);
     }
-    
-    res.json(
-      {
-        success: true,
-        data: organizationsWithRepos,
-      });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching organizations or repositories',
-      error: error.message
+
+    res.json({
+      success: true,
+      data: organizationsWithRepos,
     });
+  } catch (error) {
+    handleError(res, error, 'Error fetching organizations or repositories');
   }
 };
-
 
 exports.getOrganizationsRepoPullRequest = async (req, res) => {
   const { accessToken, orgName, repoName } = req.body;
   try {
     const repoPullRequests = await githubHelper.getGitHubRepoPullRequests(accessToken, orgName, repoName);
-
     res.json({
       success: true,
-      data: repoPullRequests
+      data: repoPullRequests,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Error fetching repo pull-request for ${repoName} `,
-      error: error.message
-    });
+    handleError(res, error, `Error fetching repo pull-request for ${repoName}`);
   }
 };
 
@@ -123,35 +106,25 @@ exports.getOrganizationsRepoCommits = async (req, res) => {
   const { accessToken, orgName, repoName } = req.body;
   try {
     const repoCommits = await githubHelper.getGitHubRepoCommits(accessToken, orgName, repoName);
-
     res.json({
       success: true,
-      data: repoCommits
+      data: repoCommits,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Error fetching repo commits for ${repoName} `,
-      error: error.message
-    });
+    handleError(res, error, `Error fetching repo commits for ${repoName}`);
   }
 };
 
 exports.getOrganizationsRepoIssues = async (req, res) => {
   const { accessToken, orgName, repoName } = req.body;
   try {
-    const repoIssuses = await githubHelper.getGitHubRepoIssues(accessToken, orgName, repoName);
-
+    const repoIssues = await githubHelper.getGitHubRepoIssues(accessToken, orgName, repoName);
     res.json({
       success: true,
-      data: repoIssuses
+      data: repoIssues,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Error fetching repo issues for ${repoName} `,
-      error: error.message
-    });
+    handleError(res, error, `Error fetching repo issues for ${repoName}`);
   }
 };
 
@@ -160,7 +133,6 @@ exports.deleteUser = async (req, res) => {
   const { accessToken } = req.query;
 
   try {
-    // Delete user already exists in the database
     const deleteUser = await githubUserModel.deleteOne({ accessToken });
 
     if (deleteUser.deletedCount > 0) {
@@ -174,7 +146,6 @@ exports.deleteUser = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error during User delete:", error);
-    res.status(500).json({ message: "Delete user operation failed" });
+    handleError(res, error, 'Delete user operation failed');
   }
 };

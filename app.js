@@ -4,7 +4,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const dotenv = require('dotenv')
-
+const handleError = require("./helpers/errorHandler");
 
 
 dotenv.config()
@@ -47,6 +47,15 @@ mongoose.connect(process.env.MONGO_URI)
 .then(()=>
     console.log('Database Connected')
 );
+
+// Centralized error handler
+app.use((err, req, res, next) => {
+  if (err) {
+    handleError(res, err);
+  } else {
+    next();
+  }
+});
 
 const portToListen = 3000
 app.listen(port , ()=>{
