@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
-const githubIntegrationSchema = new mongoose.Schema({  
+// GitHub Integration Schema
+const githubIntegrationSchema = new mongoose.Schema({
     id: {
         type: Number,
         required: 'Id is required',
-    }, 
+    },
     avatar_url: {
         type: String,
         required: 'Avatar url required',
@@ -21,15 +22,13 @@ const githubIntegrationSchema = new mongoose.Schema({
         type: String,
         required: 'User type is required',
     },
-
     accessToken: {
         type: String,
         required: 'Access token is required',
     },
-    
-    created_at: { 
-        type: Date, default: Date.now 
+    created_at: {
+        type: Date, default: Date.now
     },
-})
+});
 
-module.exports = mongoose.model("github-integration", githubIntegrationSchema)
+module.exports = mongoose.model("github-integration", githubIntegrationSchema);
